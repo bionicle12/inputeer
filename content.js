@@ -4,8 +4,8 @@
     Object.defineProperty(window, '__inputeer_initialized__', { value: true, writable: false });
 
     // State variables
-    let useDebuggerMode = false;
-    let isCollapsed = false;
+    let useDebuggerMode = true; // Always use debugger mode for now
+    let isCollapsed = true; // Default to collapsed to prevent visible state changes
     let savedFormulas = {};
     
     // Load saved state from chrome.storage
@@ -66,17 +66,17 @@
     
     const collapseButton = document.createElement('button');
     collapseButton.type = 'button';
-    collapseButton.textContent = '[–]';
+    collapseButton.textContent = '[ – ]';
     collapseButton.title = 'Свернуть/развернуть панель';
     Object.assign(collapseButton.style, {
-      padding: '0 4px',
+      padding: '5px 6px',
       border: '1px solid rgba(255,255,255,0.3)',
       borderRadius: '4px',
       background: 'rgba(0,0,0,0.25)',
       color: '#fff',
       cursor: 'pointer',
       fontSize: '10px',
-      minWidth: '24px',
+      minWidth: '28px',
       marginLeft: 'auto'
     });
     
@@ -91,20 +91,22 @@
     modeLabel.textContent = 'Режим:';
     modeLabel.style.fontSize = '11px';
     modeLabel.style.opacity = '0.8';
+    modeLabel.style.display = 'none'; // Hide mode label
 
     const modeToggle = document.createElement('button');
     modeToggle.type = 'button';
-    modeToggle.textContent = 'Песочница';
-    modeToggle.title = 'Переключить режим выполнения';
+    modeToggle.textContent = 'Отладчик';
+    modeToggle.title = 'Режим отладчика (показывает панель браузера)';
     Object.assign(modeToggle.style, {
       padding: '2px 8px',
       border: '1px solid rgba(255,255,255,0.3)',
       borderRadius: '4px',
-      background: 'rgba(0,100,0,0.3)',
+      background: 'rgba(100,0,0,0.3)',
       color: '#fff',
       cursor: 'pointer',
       fontSize: '10px',
-      minWidth: '80px'
+      minWidth: '80px',
+      display: 'none' // Hide mode toggle button
     });
     
     headerRightSection.appendChild(modeLabel);
@@ -139,6 +141,19 @@
       color: '#fff',
       outline: 'none'
     });
+    
+    // Force placeholder styling to ensure visibility on all sites
+    textarea.setAttribute('style', textarea.getAttribute('style') + '::placeholder { color: rgba(255,255,255,0.6) !important; }');
+    
+    // Add CSS rule for placeholder styling
+    const style = document.createElement('style');
+    style.textContent = `
+      #inputeeer::placeholder {
+        color: rgba(255,255,255,0.6) !important;
+        opacity: 1 !important;
+      }
+    `;
+    document.head.appendChild(style);
 
     const runBtn = document.createElement('button');
     runBtn.type = 'button';
@@ -160,13 +175,17 @@
 
     const formulaWrap = document.createElement('div');
     formulaWrap.style.marginTop = '6px';
+    formulaWrap.style.display = 'flex';
+    formulaWrap.style.flexDirection = 'column';
+    formulaWrap.style.gap = '4px';
 
     const formulaTextarea = document.createElement('textarea');
     formulaTextarea.placeholder = 'Формула, например: alert($1)';
     formulaTextarea.value = 'alert($1)';
     formulaTextarea.rows = 2;
     Object.assign(formulaTextarea.style, {
-      width: '94%',
+      width: '100%',
+      boxSizing: 'border-box',
       padding: '6px 8px',
       borderRadius: '6px',
       border: '1px solid rgba(255,255,255,0.25)',
@@ -213,6 +232,16 @@
       fontSize: '10px',
       outline: 'none'
     });
+    
+    // Add CSS rule for select options styling
+    const selectStyle = document.createElement('style');
+    selectStyle.textContent = `
+      #inputeer-panel select option {
+        background: rgba(40, 40, 40, 0.95) !important;
+        color: #fff !important;
+      }
+    `;
+    document.head.appendChild(selectStyle);
     
     const deleteBtn = document.createElement('button');
     deleteBtn.type = 'button';
@@ -305,22 +334,32 @@
     function applyCollapseState() {
       if (isCollapsed) {
         contentContainer.style.display = 'none';
-        collapseButton.textContent = '[^]';
+        collapseButton.textContent = '[ ^ ]';
         collapseButton.title = 'Развернуть панель';
+        collapseButton.style.padding = '5px 6px';
         headerTitle.style.display = 'none';
         modeLabel.style.display = 'none';
         modeToggle.style.display = 'none';
-        container.style.width = '40px';
+        container.style.width = 'auto';
+        container.style.padding = '4px 6px 0px';
+        container.style.height = '28px';
         headerRow.style.justifyContent = 'center';
+        headerRow.style.marginBottom = '0';
+        headerRow.style.gap = '0';
       } else {
         contentContainer.style.display = 'block';
         collapseButton.textContent = '[–]';
         collapseButton.title = 'Свернуть панель';
+        collapseButton.style.padding = '5px 6px';
         headerTitle.style.display = 'inline';
         modeLabel.style.display = 'inline';
         modeToggle.style.display = 'inline-block';
         container.style.width = '320px';
+        container.style.padding = '8px';
+        container.style.height = 'auto';
         headerRow.style.justifyContent = 'space-between';
+        headerRow.style.marginBottom = '6px';
+        headerRow.style.gap = '6px';
       }
     }
     
@@ -334,18 +373,19 @@
       applyCollapseState();
     });
     
-    // Mode toggle handler
+    // Mode toggle handler (disabled for now)
     modeToggle.addEventListener('click', () => {
-      useDebuggerMode = !useDebuggerMode;
-      if (useDebuggerMode) {
-        modeToggle.textContent = 'Отладчик';
-        modeToggle.style.background = 'rgba(100,0,0,0.3)';
-        modeToggle.title = 'Режим отладчика (показывает панель браузера)';
-      } else {
-        modeToggle.textContent = 'Песочница';
-        modeToggle.style.background = 'rgba(0,100,0,0.3)';
-        modeToggle.title = 'Режим песочницы (без панели браузера)';
-      }
+      // Sandbox mode is temporarily disabled
+      // useDebuggerMode = !useDebuggerMode;
+      // if (useDebuggerMode) {
+      //   modeToggle.textContent = 'Отладчик';
+      //   modeToggle.style.background = 'rgba(100,0,0,0.3)';
+      //   modeToggle.title = 'Режим отладчика (показывает панель браузера)';
+      // } else {
+      //   modeToggle.textContent = 'Песочница';
+      //   modeToggle.style.background = 'rgba(0,100,0,0.3)';
+      //   modeToggle.title = 'Режим песочницы (без панели браузера)';
+      // }
     });
     
     // Save/Load handlers
@@ -388,7 +428,227 @@
       const val = textarea.value;
       const taskId = 'task-' + Date.now() + '-' + Math.random().toString(36).slice(2);
       const code = String(formulaTextarea.value || '').replace(/\$1/g, 'value');
-      sandboxWin.postMessage({ type: 'INPUTEER_RUN', code, value: val, taskId }, '*');
+      
+      // Try multiple sandbox execution methods
+      try {
+        // Method 1: Try iframe postMessage (original approach)
+        if (sandboxWin && sandboxWin.postMessage) {
+          sandboxWin.postMessage({ type: 'INPUTEER_RUN', code, value: val, taskId }, '*');
+          
+          // Set timeout to fallback if iframe method fails
+          setTimeout(() => {
+            // Method 2: Direct script injection with CSP bypass
+            runInSandboxDirect(val, code, taskId);
+          }, 500);
+        } else {
+          // iframe not available, use direct method
+          runInSandboxDirect(val, code, taskId);
+        }
+      } catch (err) {
+        console.error('[Inputeer] Sandbox error:', err);
+        runInSandboxDirect(val, code, taskId);
+      }
+    }
+    
+    function runInSandboxDirect(val, code, taskId) {
+      try {
+        // Method 2: Modern CSP-compliant execution methods
+        const safeGlobals = {
+          alert: window.alert.bind(window),
+          confirm: window.confirm.bind(window),
+          prompt: window.prompt.bind(window),
+          console: window.console,
+          document: window.document,
+          window: window,
+          value: val
+        };
+        
+        // Method 2a: Try Function constructor (most CSP-friendly)
+        try {
+          const wrappedCode = `
+            (function(alert, confirm, prompt, console, document, window, value) {
+              'use strict';
+              try {
+                return (function() {
+                  ${code}
+                })();
+              } catch (e) {
+                throw e;
+              }
+            })
+          `;
+          
+          const fn = new Function('return ' + wrappedCode)();
+          const result = fn(
+            safeGlobals.alert,
+            safeGlobals.confirm,
+            safeGlobals.prompt,
+            safeGlobals.console,
+            safeGlobals.document,
+            safeGlobals.window,
+            safeGlobals.value
+          );
+          
+          console.log('[Inputeer] Результат (прямое выполнение):', result);
+          textarea.value = '';
+          return;
+        } catch (err) {
+          console.warn('[Inputeer] Function constructor failed:', err);
+        }
+        
+        // Method 2b: Script injection with nonce support
+        try {
+          const script = document.createElement('script');
+          script.type = 'text/javascript';
+          
+          // Try to get existing nonce from page scripts
+          let nonce = null;
+          const existingScripts = document.querySelectorAll('script[nonce]');
+          if (existingScripts.length > 0) {
+            nonce = existingScripts[0].getAttribute('nonce');
+          }
+          
+          // If no nonce found, try meta tag
+          if (!nonce) {
+            const metaCSP = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
+            if (metaCSP) {
+              const cspContent = metaCSP.getAttribute('content');
+              const nonceMatch = cspContent.match(/nonce-([a-zA-Z0-9+\/=]+)/);
+              if (nonceMatch) {
+                nonce = nonceMatch[1];
+              }
+            }
+          }
+          
+          if (nonce) {
+            script.setAttribute('nonce', nonce);
+          }
+          
+          // Generate unique function name to avoid conflicts
+          const funcName = 'inputeerFunc_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+          
+          const scriptContent = `
+            window.${funcName} = function() {
+              try {
+                const value = ${JSON.stringify(val)};
+                const result = (function() {
+                  ${code}
+                })();
+                console.log('[Inputeer] Результат (script injection):', result);
+                
+                // Clear textarea
+                const textarea = document.getElementById('inputeeer');
+                if (textarea) textarea.value = '';
+                
+                // Cleanup
+                delete window.${funcName};
+              } catch (e) {
+                console.error('[Inputeer] Script injection error:', e);
+                alert('[Inputeer] Ошибка: ' + e.message);
+                delete window.${funcName};
+              }
+            };
+            window.${funcName}();
+          `;
+          
+          script.textContent = scriptContent;
+          document.head.appendChild(script);
+          
+          // Clean up script element
+          setTimeout(() => {
+            if (script.parentNode) {
+              script.parentNode.removeChild(script);
+            }
+          }, 100);
+          
+          return;
+        } catch (err) {
+          console.warn('[Inputeer] Script injection failed:', err);
+        }
+        
+        // Method 2c: Event-based execution (CSP bypass)
+        try {
+          const eventName = 'inputeer_exec_' + Date.now();
+          
+          // Create event listener
+          const handler = function(e) {
+            try {
+              const value = e.detail.value;
+              const result = new Function('value', e.detail.code)(value);
+              console.log('[Inputeer] Результат (event-based):', result);
+              textarea.value = '';
+            } catch (err) {
+              console.error('[Inputeer] Event execution error:', err);
+              alert('[Inputeer] Ошибка: ' + err.message);
+            }
+            document.removeEventListener(eventName, handler);
+          };
+          
+          document.addEventListener(eventName, handler);
+          
+          // Dispatch event
+          const event = new CustomEvent(eventName, {
+            detail: { code, value: val }
+          });
+          document.dispatchEvent(event);
+          
+          return;
+        } catch (err) {
+          console.warn('[Inputeer] Event-based execution failed:', err);
+        }
+        
+        // Method 2d: Web Worker approach (for heavy computations)
+        try {
+          const blob = new Blob([
+            `
+            self.addEventListener('message', function(e) {
+              try {
+                const value = e.data.value;
+                const code = e.data.code;
+                
+                // Limited execution context in worker
+                const result = new Function('value', code)(value);
+                self.postMessage({ success: true, result: result });
+              } catch (error) {
+                self.postMessage({ success: false, error: error.message });
+              }
+            });
+            `
+          ], { type: 'application/javascript' });
+          
+          const worker = new Worker(URL.createObjectURL(blob));
+          
+          worker.onmessage = function(e) {
+            if (e.data.success) {
+              console.log('[Inputeer] Результат (Web Worker):', e.data.result);
+              textarea.value = '';
+            } else {
+              console.error('[Inputeer] Web Worker error:', e.data.error);
+              alert('[Inputeer] Ошибка: ' + e.data.error);
+            }
+            worker.terminate();
+            URL.revokeObjectURL(blob);
+          };
+          
+          worker.onerror = function(err) {
+            console.error('[Inputeer] Web Worker failed:', err);
+            worker.terminate();
+            URL.revokeObjectURL(blob);
+            throw err;
+          };
+          
+          worker.postMessage({ code, value: val });
+          return;
+        } catch (err) {
+          console.warn('[Inputeer] Web Worker method failed:', err);
+        }
+        
+        throw new Error('Все методы выполнения в песочнице не удались');
+        
+      } catch (err) {
+        console.error('[Inputeer] Ошибка выполнения в песочнице:', err);
+        try { alert('[Inputeer] Ошибка: ' + err.message); } catch (_) {}
+      }
     }
 
     function runInDebugger() {
@@ -413,11 +673,13 @@
 
     function run() {
       try {
-        if (useDebuggerMode) {
-          runInDebugger();
-        } else {
-          runInSandbox();
-        }
+        // Always use debugger mode for now (sandbox mode is temporarily disabled)
+        runInDebugger();
+        // if (useDebuggerMode) {
+        //   runInDebugger();
+        // } else {
+        //   runInSandbox();
+        // }
       } catch (err) {
         console.error('[Inputeer] Ошибка выполнения формулы:', err);
         try { alert('[Inputeer] Ошибка: ' + err); } catch (_) { /* ignore */ }

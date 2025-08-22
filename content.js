@@ -31,7 +31,7 @@
       borderRadius: '8px',
       width: '320px',
       boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-      fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
+      fontFamily: 'Tahoma, Verdana, sans-serif',
       fontSize: '12px',
       lineHeight: '1.4',
       backdropFilter: 'blur(2px)',

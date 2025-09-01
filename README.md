@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img src="https://via.placeholder.com/800x400/4a90e2/ffffff?text=Inputeer+Demo" alt="Inputeer Demo" width="70%">
+  <img src="https://raw.githubusercontent.com/bionicle12/inputeer/main/assets/demo.png" alt="Inputeer Demo" width="70%">
 </p>
 
 <p align="center">
@@ -62,8 +62,8 @@ Save frequently used commands with names (e.g., "vk dating")
 ### 📸 Screenshots
 
 <p align="center">
-  <img src="https://via.placeholder.com/400x300/2c3e50/ffffff?text=Inputeer+Panel" alt="Inputeer Panel" width="45%">
-  <img src="https://via.placeholder.com/400x300/34495e/ffffff?text=Formula+Examples" alt="Formula Examples" width="45%">
+  <img src="https://raw.githubusercontent.com/bionicle12/inputeer/main/assets/panel.png" alt="Inputeer Panel" width="45%">
+  <img src="https://raw.githubusercontent.com/bionicle12/inputeer/main/assets/formula.png" alt="Formula Examples" width="45%">
 </p>
 
 ### Formula Examples:

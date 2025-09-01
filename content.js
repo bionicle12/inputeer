@@ -9,7 +9,7 @@
         title: 'Inputeer',
         collapseButton: {
           collapsed: '[ ^ ]',
-          expanded: '[–]',
+          expanded: '[v]',
           collapsedTitle: 'Expand panel',
           expandedTitle: 'Collapse panel'
         },
@@ -40,7 +40,7 @@
         title: 'Inputeer',
         collapseButton: {
           collapsed: '[ ^ ]',
-          expanded: '[–]',
+          expanded: '[v]',
           collapsedTitle: 'Развернуть панель',
           expandedTitle: 'Свернуть панель'
         },

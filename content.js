@@ -3,18 +3,129 @@
     if (window.__inputeer_initialized__) return;
     Object.defineProperty(window, '__inputeer_initialized__', { value: true, writable: false });
 
+    // Localization system
+    const translations = {
+      en: {
+        title: 'Inputeer',
+        collapseButton: {
+          collapsed: '[ ^ ]',
+          expanded: '[–]',
+          collapsedTitle: 'Expand panel',
+          expandedTitle: 'Collapse panel'
+        },
+        textareaPlaceholder: 'Text for substitution as $1',
+        formulaPlaceholder: 'Formula, example: alert($1)',
+        runButton: '▶',
+        runButtonTitle: 'Execute (Ctrl+Enter)',
+        saveButton: 'Save',
+        saveButtonTitle: 'Save current formula',
+        deleteButton: 'Delete',
+        deleteButtonTitle: 'Delete selected formula',
+        selectPlaceholder: 'Choose formula...',
+        savePromptTitle: 'Save formula name:',
+        saveSuccessMessage: 'Formula saved: ',
+        deleteConfirmMessage: 'Delete formula "',
+        deleteConfirmEnd: '"?',
+        noFormulaSelected: 'Please select a formula to delete.',
+        errorPrefix: '[Inputeer] Error: ',
+        resultPrefix: '[Inputeer] Result: ',
+        executionError: '[Inputeer] Execution error: ',
+        modeLabel: 'Mode:',
+        debuggerMode: 'Debugger',
+        debuggerModeTitle: 'Debugger mode (shows browser panel)',
+        sandboxMode: 'Sandbox',
+        sandboxModeTitle: 'Sandbox mode (no browser panel)'
+      },
+      ru: {
+        title: 'Inputeer',
+        collapseButton: {
+          collapsed: '[ ^ ]',
+          expanded: '[–]',
+          collapsedTitle: 'Развернуть панель',
+          expandedTitle: 'Свернуть панель'
+        },
+        textareaPlaceholder: 'Текст для подстановки как $1',
+        formulaPlaceholder: 'Формула, например: alert($1)',
+        runButton: '▶',
+        runButtonTitle: 'Выполнить (Ctrl+Enter)',
+        saveButton: 'Сохранить',
+        saveButtonTitle: 'Сохранить текущую формулу',
+        deleteButton: 'Удалить',
+        deleteButtonTitle: 'Удалить выбранную формулу',
+        selectPlaceholder: 'Выберите формулу...',
+        savePromptTitle: 'Название для сохранения формулы:',
+        saveSuccessMessage: 'Формула сохранена: ',
+        deleteConfirmMessage: 'Удалить формулу "',
+        deleteConfirmEnd: '"?',
+        noFormulaSelected: 'Выберите формулу для удаления.',
+        errorPrefix: '[Inputeer] Ошибка: ',
+        resultPrefix: '[Inputeer] Результат: ',
+        executionError: '[Inputeer] Ошибка выполнения формулы: ',
+        modeLabel: 'Режим:',
+        debuggerMode: 'Отладчик',
+        debuggerModeTitle: 'Режим отладчика (показывает панель браузера)',
+        sandboxMode: 'Песочница',
+        sandboxModeTitle: 'Режим песочницы (без панели браузера)'
+      }
+    };
+
     // State variables
+    let currentLanguage = 'en'; // Default language
     let useDebuggerMode = true; // Always use debugger mode for now
     let isCollapsed = true; // Default to collapsed to prevent visible state changes
     let savedFormulas = {};
     
     // Load saved state from chrome.storage
-    chrome.storage.local.get(['inputeer_collapsed', 'inputeer_formulas'], (result) => {
+    chrome.storage.local.get(['inputeer_collapsed', 'inputeer_formulas', 'inputeer_language'], (result) => {
       isCollapsed = result.inputeer_collapsed === true;
       savedFormulas = result.inputeer_formulas || {};
+      currentLanguage = result.inputeer_language || 'en'; // Default to English
       applyCollapseState();
       updateFormulaSelect();
+      updateAllTexts(); // Update texts after loading language
     });
+
+    // Function to get current translation
+    function t(key) {
+      return translations[currentLanguage][key] || key;
+    }
+
+    // Function to update all UI texts
+    function updateAllTexts() {
+      const trans = translations[currentLanguage];
+
+      // Update title
+      headerTitle.textContent = trans.title;
+
+      // Update placeholders
+      textarea.placeholder = trans.textareaPlaceholder;
+      formulaTextarea.placeholder = trans.formulaPlaceholder;
+
+      // Update default formula value if it's still the default
+      if (formulaTextarea.value === 'alert($1)' || formulaTextarea.value === 'Формула, например: alert($1)') {
+        formulaTextarea.value = trans.formulaPlaceholder;
+      }
+
+      // Update button texts
+      runBtn.textContent = trans.runButton;
+      runBtn.title = trans.runButtonTitle;
+      saveBtn.textContent = trans.saveButton;
+      saveBtn.title = trans.saveButtonTitle;
+      deleteBtn.textContent = trans.deleteButton;
+      deleteBtn.title = trans.deleteButtonTitle;
+
+      // Update select placeholder (need to recreate options)
+      updateFormulaSelect();
+
+      // Update language toggle button
+      languageToggle.textContent = currentLanguage === 'en' ? '🇷🇺' : '🇺🇸';
+      languageToggle.title = currentLanguage === 'en' ? 'Switch to Russian' : 'Переключить на английский';
+
+      // Update mode elements (even though they're hidden)
+      modeLabel.textContent = trans.modeLabel;
+      modeToggle.textContent = trans.debuggerMode;
+      modeToggle.title = trans.debuggerModeTitle;
+    }
     
     // Create primary container
     const container = document.createElement('div');
@@ -58,11 +169,27 @@
     headerLeftSection.style.display = 'flex';
     headerLeftSection.style.alignItems = 'center';
     headerLeftSection.style.gap = '6px';
-    
+
     const headerTitle = document.createElement('span');
     headerTitle.textContent = 'Inputeer';
     headerTitle.style.fontWeight = 'bold';
     headerTitle.style.fontSize = '12px';
+
+    // Language toggle button
+    const languageToggle = document.createElement('button');
+    languageToggle.type = 'button';
+    languageToggle.textContent = '🇷🇺';
+    languageToggle.title = 'Switch to Russian';
+    Object.assign(languageToggle.style, {
+      padding: '2px 4px',
+      border: '1px solid rgba(255,255,255,0.3)',
+      borderRadius: '3px',
+      background: 'rgba(0,0,0,0.25)',
+      color: '#fff',
+      cursor: 'pointer',
+      fontSize: '10px',
+      minWidth: '20px'
+    });
     
     const collapseButton = document.createElement('button');
     collapseButton.type = 'button';
@@ -81,7 +208,8 @@
     });
     
     headerLeftSection.appendChild(headerTitle);
-    
+    headerLeftSection.appendChild(languageToggle);
+
     const headerRightSection = document.createElement('div');
     headerRightSection.style.display = 'flex';
     headerRightSection.style.alignItems = 'center';
@@ -181,7 +309,7 @@
 
     const formulaTextarea = document.createElement('textarea');
     formulaTextarea.placeholder = 'Формула, например: alert($1)';
-    formulaTextarea.value = 'alert($1)';
+    formulaTextarea.value = 'alert($1)'; // Will be updated by updateAllTexts()
     formulaTextarea.rows = 2;
     Object.assign(formulaTextarea.style, {
       width: '100%',
@@ -268,7 +396,7 @@
     contentContainer.appendChild(formulaWrap);
     
     function updateFormulaSelect() {
-      loadSelect.innerHTML = '<option value="">Выберите формулу...</option>';
+      loadSelect.innerHTML = '<option value="">' + t('selectPlaceholder') + '</option>';
       Object.keys(savedFormulas).sort().forEach(name => {
         const option = document.createElement('option');
         option.value = name;
@@ -318,11 +446,11 @@
     window.addEventListener('message', (e) => {
       if (e.source === sandboxWin && e.data && e.data.type === 'INPUTEER_RESULT' && e.data.taskId) {
         if (!e.data.ok) {
-          try { alert('[Inputeer] Ошибка: ' + e.data.error); } catch (_) { /* ignore */ }
-          console.error('[Inputeer] Ошибка выполнения формулы:', e.data.error);
+          try { alert(t('errorPrefix') + e.data.error); } catch (_) { /* ignore */ }
+          console.error(t('executionError'), e.data.error);
         } else {
           if (typeof e.data.result !== 'undefined') {
-            console.log('[Inputeer] Результат:', e.data.result);
+            console.log(t('resultPrefix'), e.data.result);
           }
           // Clear textarea after successful execution
           textarea.value = '';
@@ -332,12 +460,14 @@
 
     // Function to apply collapse state
     function applyCollapseState() {
+      const trans = translations[currentLanguage];
       if (isCollapsed) {
         contentContainer.style.display = 'none';
-        collapseButton.textContent = '[ ^ ]';
-        collapseButton.title = 'Развернуть панель';
+        collapseButton.textContent = trans.collapseButton.collapsed;
+        collapseButton.title = trans.collapseButton.collapsedTitle;
         collapseButton.style.padding = '5px 6px';
         headerTitle.style.display = 'none';
+        languageToggle.style.display = 'none';
         modeLabel.style.display = 'none';
         modeToggle.style.display = 'none';
         container.style.width = 'auto';
@@ -348,10 +478,11 @@
         headerRow.style.gap = '0';
       } else {
         contentContainer.style.display = 'block';
-        collapseButton.textContent = '[–]';
-        collapseButton.title = 'Свернуть панель';
+        collapseButton.textContent = trans.collapseButton.expanded;
+        collapseButton.title = trans.collapseButton.expandedTitle;
         collapseButton.style.padding = '5px 6px';
         headerTitle.style.display = 'inline';
+        languageToggle.style.display = 'inline-block';
         modeLabel.style.display = 'inline';
         modeToggle.style.display = 'inline-block';
         container.style.width = '320px';
@@ -365,6 +496,14 @@
     
     // Apply initial collapse state
     applyCollapseState();
+
+    // Language toggle handler
+    languageToggle.addEventListener('click', () => {
+      currentLanguage = currentLanguage === 'en' ? 'ru' : 'en';
+      chrome.storage.local.set({ inputeer_language: currentLanguage });
+      updateAllTexts();
+      applyCollapseState();
+    });
 
     // Collapse handler
     collapseButton.addEventListener('click', () => {
@@ -390,12 +529,12 @@
     
     // Save/Load handlers
     saveBtn.addEventListener('click', () => {
-      const name = prompt('Название для сохранения формулы:', '');
+      const name = prompt(t('savePromptTitle'), '');
       if (name && name.trim()) {
         savedFormulas[name.trim()] = formulaTextarea.value;
         chrome.storage.local.set({ inputeer_formulas: savedFormulas });
         updateFormulaSelect();
-        alert('Формула сохранена: ' + name.trim());
+        alert(t('saveSuccessMessage') + name.trim());
       }
     });
     
@@ -409,13 +548,13 @@
     deleteBtn.addEventListener('click', () => {
       const selectedName = loadSelect.value;
       if (selectedName && savedFormulas[selectedName]) {
-        if (confirm('Удалить формулу "' + selectedName + '"?')) {
+        if (confirm(t('deleteConfirmMessage') + selectedName + t('deleteConfirmEnd'))) {
           delete savedFormulas[selectedName];
           chrome.storage.local.set({ inputeer_formulas: savedFormulas });
           updateFormulaSelect();
         }
       } else {
-        alert('Выберите формулу для удаления.');
+        alert(t('noFormulaSelected'));
       }
     });
 
@@ -544,7 +683,7 @@
                 delete window.${funcName};
               } catch (e) {
                 console.error('[Inputeer] Script injection error:', e);
-                alert('[Inputeer] Ошибка: ' + e.message);
+                alert(t('errorPrefix') + e.message);
                 delete window.${funcName};
               }
             };
@@ -579,7 +718,7 @@
               textarea.value = '';
             } catch (err) {
               console.error('[Inputeer] Event execution error:', err);
-              alert('[Inputeer] Ошибка: ' + err.message);
+              alert(t('errorPrefix') + err.message);
             }
             document.removeEventListener(eventName, handler);
           };
@@ -624,7 +763,7 @@
               textarea.value = '';
             } else {
               console.error('[Inputeer] Web Worker error:', e.data.error);
-              alert('[Inputeer] Ошибка: ' + e.data.error);
+              alert(t('errorPrefix') + e.data.error);
             }
             worker.terminate();
             URL.revokeObjectURL(blob);
@@ -647,7 +786,7 @@
         
       } catch (err) {
         console.error('[Inputeer] Ошибка выполнения в песочнице:', err);
-        try { alert('[Inputeer] Ошибка: ' + err.message); } catch (_) {}
+        try { alert(t('errorPrefix') + err.message); } catch (_) {}
       }
     }
 
@@ -659,7 +798,7 @@
       chrome.runtime.sendMessage({ type: 'INPUTEER_EVAL', code: wrapped }, (resp) => {
         if (!resp || !resp.ok) {
           const errMsg = (resp && resp.error) || 'Unknown error';
-          try { alert('[Inputeer] Ошибка: ' + errMsg); } catch (_) {}
+          try { alert(t('errorPrefix') + errMsg); } catch (_) {}
           console.error('[Inputeer] Ошибка выполнения формулы:', errMsg);
           return;
         }
@@ -682,7 +821,7 @@
         // }
       } catch (err) {
         console.error('[Inputeer] Ошибка выполнения формулы:', err);
-        try { alert('[Inputeer] Ошибка: ' + err); } catch (_) { /* ignore */ }
+        try { alert(t('errorPrefix') + err); } catch (_) { /* ignore */ }
       }
     }
 
